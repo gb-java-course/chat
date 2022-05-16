@@ -6,6 +6,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
@@ -17,6 +18,9 @@ import javafx.scene.layout.VBox;
 import ru.gb.may_chat.client.net.MessageProcessor;
 import ru.gb.may_chat.client.net.NetworkService;
 import ru.gb.may_chat.enums.Command;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
@@ -105,6 +109,24 @@ public class ChatController implements Initializable, MessageProcessor {
                 ButtonType.CLOSE
         );
         alert.showAndWait();
+    }
+
+    public void showGuide(ActionEvent actionEvent) {
+        URL helpGuideRes = getClass().getClassLoader().getResource("help/helpGuide.html");
+        if (helpGuideRes == null) {
+            throw new IllegalArgumentException("helpGuide.html not found in resources/help folder");
+        }
+
+        Stage stage = new Stage();
+        stage.setTitle("Help Guide");
+
+        WebView webView = new WebView();
+        WebEngine engine = webView.getEngine();
+        engine.load(helpGuideRes.toExternalForm());
+
+        Scene scene = new Scene(webView, webView.getPrefWidth(), webView.getPrefHeight());
+        stage.setScene(scene);
+        stage.show();
     }
 
     @Override
