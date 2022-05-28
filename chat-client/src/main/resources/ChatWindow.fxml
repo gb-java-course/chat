@@ -3,9 +3,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
-
 <?import javafx.geometry.Insets?>
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/15" xmlns:fx="http://javafx.com/fxml/1"
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="ru.gb.may_chat.client.ChatController">
     <VBox visible="false" fx:id="changeNickPanel">
 
@@ -61,10 +61,7 @@
                 <MenuItem text="Exit" onAction="#mockAction"/>
             </Menu>
             <Menu text="Help">
-                <MenuItem text="Open" onAction="#mockAction"/>
-                <MenuItem text="Connect" onAction="#mockAction"/>
-                <MenuItem text="Something" onAction="#mockAction"/>
-                <MenuItem text="Exit" onAction="#mockAction"/>
+                <MenuItem text="Guide" onAction="#showGuide"/>
             </Menu>
         </MenuBar>
 
@@ -85,7 +82,7 @@
         </HBox>
 
         <HBox VBox.vgrow="ALWAYS">
-            <TextField fx:id="inputField"  HBox.hgrow="ALWAYS" prefHeight="65.0" onAction="#sendMessage">
+            <TextField fx:id="inputField" HBox.hgrow="ALWAYS" prefHeight="65.0" onAction="#sendMessage">
                 <HBox.margin>
                     <Insets left="6.0" right="6.0"/>
                 </HBox.margin>
