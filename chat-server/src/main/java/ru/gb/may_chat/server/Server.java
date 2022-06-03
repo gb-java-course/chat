@@ -1,6 +1,6 @@
 package ru.gb.may_chat.server;
 
-import ru.gb.may_chat.server.model.User;
+import ru.gb.may_chat.props.PropertyReader;
 import ru.gb.may_chat.server.service.UserService;
 
 import java.io.IOException;
@@ -13,9 +13,10 @@ import java.util.stream.Collectors;
 import static ru.gb.may_chat.constants.MessageConstants.REGEX;
 import static ru.gb.may_chat.enums.Command.BROADCAST_MESSAGE;
 import static ru.gb.may_chat.enums.Command.LIST_USERS;
+import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
 
 public class Server {
-    private static final int PORT = 8189;
+    private final int port;
     private List<Handler> handlers;
 
     private UserService userService;
@@ -23,10 +24,11 @@ public class Server {
     public Server(UserService userService) {
         this.userService = userService;
         this.handlers = new ArrayList<>();
+        port = PropertyReader.getInstance().getPort();
     }
 
     public void start() {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Server start!");
             userService.start();
             while (true) {
@@ -50,6 +52,15 @@ public class Server {
         }
     }
 
+    public void privateMessage(String from, String to, String message) {
+        String msg = PRIVATE_MESSAGE.getCommand() + REGEX + String.format("[%s][to %s]: %s", from, to, message);
+        for (Handler handler : handlers) {
+            if (handler.getUser().equals(from) || handler.getUser().equals(to)) {
+                handler.send(msg);
+            }
+        }
+    }
+
     public UserService getUserService() {
         return userService;
     }
@@ -70,6 +81,10 @@ public class Server {
 
     public synchronized void removeHandler(Handler handler) {
         this.handlers.remove(handler);
+        sendContacts();
+    }
+
+    public synchronized void updateHandlerUsername() {
         sendContacts();
     }
 

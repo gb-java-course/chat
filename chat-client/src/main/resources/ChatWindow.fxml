@@ -49,8 +49,8 @@
                 <MenuItem text="Exit" onAction="#closeApplication"/>
             </Menu>
             <Menu text="Edit">
-                <MenuItem text="Open" onAction="#mockAction"/>
-                <MenuItem text="Connect" onAction="#mockAction"/>
+                <MenuItem text="Change nick name" onAction="#showChangeNickPanel"/>
+                <MenuItem text="Something" onAction="#mockAction"/>
                 <MenuItem text="Something" onAction="#mockAction"/>
                 <MenuItem text="Exit" onAction="#mockAction"/>
             </Menu>
