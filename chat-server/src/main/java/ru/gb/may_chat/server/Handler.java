@@ -1,7 +1,7 @@
 package ru.gb.may_chat.server;
 
-import ru.gb.may_chat.constants.MessageConstants;
 import ru.gb.may_chat.enums.Command;
+import ru.gb.may_chat.props.PropertyReader;
 import ru.gb.may_chat.server.error.NickAlreadyIsBusyException;
 import ru.gb.may_chat.server.error.WrongCredentialsException;
 
@@ -13,10 +13,8 @@ import java.net.Socket;
 import static ru.gb.may_chat.constants.MessageConstants.REGEX;
 import static ru.gb.may_chat.enums.Command.AUTH_MESSAGE;
 import static ru.gb.may_chat.enums.Command.AUTH_OK;
-import static ru.gb.may_chat.enums.Command.BROADCAST_MESSAGE;
 import static ru.gb.may_chat.enums.Command.CHANGE_NICK_OK;
 import static ru.gb.may_chat.enums.Command.ERROR_MESSAGE;
-import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
 
 public class Handler {
     private Socket socket;
@@ -26,12 +24,17 @@ public class Handler {
     private Server server;
     private String user;
 
+    private Long authTimeout;
+
+    private final Object mon = new Object();
+
     public Handler(Socket socket, Server server) {
         try {
             this.server = server;
             this.socket = socket;
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
+            this.authTimeout = PropertyReader.getInstance().getAuthTimeout();
             System.out.println("Handler created");
         } catch (IOException e) {
             System.err.println("Connection problems with user: " + user);
@@ -81,6 +84,19 @@ public class Handler {
     private void authorize() {
         System.out.println("Authorizing");
 
+        new Thread(() -> {
+            try {
+                Thread.sleep(authTimeout);
+                synchronized (mon) {
+                    if (user == null) {
+                        socket.close();
+                    }
+                }
+            } catch (InterruptedException | IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
         try {
             while (!socket.isClosed()) {
                 String msg = in.readUTF();
@@ -105,7 +121,9 @@ public class Handler {
                         send(response);
                     } else {
                         System.out.println("Auth ok");
-                        this.user = nickname;
+                        synchronized (mon) {
+                            this.user = nickname;
+                        }
                         send(AUTH_OK.getCommand() + REGEX + nickname);
                         server.addHandler(this);
                         break;

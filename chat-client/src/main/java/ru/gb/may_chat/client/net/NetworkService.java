@@ -1,5 +1,6 @@
 package ru.gb.may_chat.client.net;
 
+import javafx.application.Platform;
 import ru.gb.may_chat.props.PropertyReader;
 
 import java.io.DataInputStream;
@@ -67,6 +68,7 @@ public class NetworkService {
             socket.close();
         }
         System.out.println("Client stopped");
+        Platform.exit();
     }
 
 }
