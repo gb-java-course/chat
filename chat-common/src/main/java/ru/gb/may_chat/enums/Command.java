@@ -8,6 +8,8 @@ public enum Command {
     PRIVATE_MESSAGE("/private"),
     AUTH_MESSAGE("/auth"),
     AUTH_OK("/auth-ok"),
+    CHANGE_NICK("/change-nick"),
+    CHANGE_NICK_OK("/change-nick-ok"),
     ERROR_MESSAGE("/error");
 
     private String command;

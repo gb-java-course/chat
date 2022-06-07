@@ -2,6 +2,7 @@ package ru.gb.may_chat.server;
 
 import ru.gb.may_chat.constants.MessageConstants;
 import ru.gb.may_chat.enums.Command;
+import ru.gb.may_chat.server.error.NickAlreadyIsBusyException;
 import ru.gb.may_chat.server.error.WrongCredentialsException;
 
 import java.io.DataInputStream;
@@ -13,6 +14,7 @@ import static ru.gb.may_chat.constants.MessageConstants.REGEX;
 import static ru.gb.may_chat.enums.Command.AUTH_MESSAGE;
 import static ru.gb.may_chat.enums.Command.AUTH_OK;
 import static ru.gb.may_chat.enums.Command.BROADCAST_MESSAGE;
+import static ru.gb.may_chat.enums.Command.CHANGE_NICK_OK;
 import static ru.gb.may_chat.enums.Command.ERROR_MESSAGE;
 import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
 
@@ -60,8 +62,20 @@ public class Handler {
         switch (command) {
             case BROADCAST_MESSAGE -> server.broadcast(user, split[1]);
             case PRIVATE_MESSAGE -> server.sendPrivateMessage(user, split[1], split[2]);
+            case CHANGE_NICK -> changeNick(split[1]);
             default -> System.out.println("Unknown message " + message);
         }
+    }
+
+    private void changeNick(String newNick) {
+       try {
+          server.getUserService().changeNick(user, newNick);
+          user = newNick;
+          server.updateHandlerUsername();
+          send(CHANGE_NICK_OK.getCommand() + REGEX + newNick);
+        } catch (NickAlreadyIsBusyException e) {
+           send(ERROR_MESSAGE.getCommand() + REGEX + "This nickname already in use");
+       }
     }
 
     private void authorize() {
