@@ -65,6 +65,7 @@ public class InMemoryUserServiceImpl implements UserService {
         }
         throw new UserNotFoundException();
     }
+
     private User findUserByLogin(String login) {
         for (User user : users) {
             if (user.getLogin().equals(login)) {
