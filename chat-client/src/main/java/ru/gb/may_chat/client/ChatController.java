@@ -5,27 +5,31 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
-import ru.gb.may_chat.client.net.MessageProcessor;
-import ru.gb.may_chat.client.net.NetworkService;
-import ru.gb.may_chat.enums.Command;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import org.apache.commons.io.input.ReversedLinesFileReader;
+import ru.gb.may_chat.client.net.MessageProcessor;
+import ru.gb.may_chat.client.net.NetworkService;
+import ru.gb.may_chat.enums.Command;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -34,11 +38,12 @@ import static ru.gb.may_chat.enums.Command.AUTH_MESSAGE;
 import static ru.gb.may_chat.enums.Command.BROADCAST_MESSAGE;
 import static ru.gb.may_chat.enums.Command.CHANGE_NICK;
 import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
-import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
 
 public class ChatController implements Initializable, MessageProcessor {
 
     private static final String BROADCAST_CONTACT = "ALL";
+    private static final int LAST_HISTORY_MESSAGES_NUMBER = 100;
+
     @FXML
     private VBox changeNickPanel;
 
@@ -80,6 +85,7 @@ public class ChatController implements Initializable, MessageProcessor {
     private NetworkService networkService;
 
     private String user;
+    private String historyFileName;
 
     public void mockAction(ActionEvent actionEvent) {
         System.out.println("mock");
@@ -155,7 +161,7 @@ public class ChatController implements Initializable, MessageProcessor {
             case ERROR_MESSAGE -> showError(split[1]);
             case LIST_USERS -> parseUsers(split);
             case CHANGE_NICK_OK -> handleChangeNick(split[1]);
-            default -> chatArea.appendText(split[1] + System.lineSeparator());
+            default -> addChatMessage(split[1]);
         }
     }
 
@@ -173,9 +179,54 @@ public class ChatController implements Initializable, MessageProcessor {
 
     private void authOk(String[] split) {
         System.out.println("Auth ok");
-        user = split[1];
+        String login = split[1];
+        String nickname = split[2];
+
+        historyFileName = "history_" + login;
+        user = nickname;
         loginPanel.setVisible(false);
         mainPanel.setVisible(true);
+
+        showMessageHistory();
+    }
+
+    private void showMessageHistory() {
+        try {
+            var file = new File(historyFileName);
+            if (file.exists()) {
+                var msgs = new LinkedList<String>();
+                var fr = new ReversedLinesFileReader(file);
+                String line;
+                for (int i = 0; i < LAST_HISTORY_MESSAGES_NUMBER; i++) {
+                    line = fr.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    msgs.addFirst(line);
+                }
+
+                msgs.forEach(msg -> chatArea.appendText(msg + System.lineSeparator()));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addChatMessage(String message) {
+        chatArea.appendText(message + System.lineSeparator());
+        try {
+            writeMessageHistory(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void writeMessageHistory(String message) throws IOException {
+        var fw = new FileWriter(historyFileName, true);
+        var bw = new BufferedWriter(fw);
+        bw.append(message).append(System.lineSeparator());
+        bw.close();
+        fw.close();
     }
 
     public void sendChangeNick(ActionEvent actionEvent) {

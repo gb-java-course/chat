@@ -104,12 +104,14 @@ public class Handler {
                     String[] parsed = msg.split(REGEX);
                     String response = "";
                     String nickname = null;
+                    String login = parsed[1];
+                    String password = parsed[2];
 
                     try {
-                        nickname = server.getUserService().authenticate(parsed[1], parsed[2]);
+                        nickname = server.getUserService().authenticate(login, password);
                     } catch (WrongCredentialsException e) {
                         response = ERROR_MESSAGE.getCommand() + REGEX + e.getMessage();
-                        System.out.println("Wrong credentials: " + parsed[1]);
+                        System.out.println("Wrong credentials: " + login);
                     }
                     
                     if (server.isUserAlreadyOnline(nickname)) {
@@ -124,7 +126,7 @@ public class Handler {
                         synchronized (mon) {
                             this.user = nickname;
                         }
-                        send(AUTH_OK.getCommand() + REGEX + nickname);
+                        send(AUTH_OK.getCommand() + REGEX + login + REGEX + nickname);
                         server.addHandler(this);
                         break;
                     }
