@@ -92,7 +92,12 @@ public class ChatController implements Initializable, MessageProcessor {
     }
 
     public void closeApplication(ActionEvent actionEvent) {
-        Platform.exit();
+        try {
+            networkService.shutdown();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Platform.exit();
+        }
     }
 
     public void sendMessage(ActionEvent actionEvent) {

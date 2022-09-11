@@ -20,7 +20,6 @@ public class Handler {
     private Socket socket;
     private DataOutputStream out;
     private DataInputStream in;
-    private Thread handlerThread;
     private Server server;
     private String user;
 
@@ -42,7 +41,7 @@ public class Handler {
     }
 
     public void handle() {
-        handlerThread = new Thread(() -> {
+        server.getExecutorService().submit(() -> {
             authorize();
             System.out.println("Auth done");
             while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
@@ -51,11 +50,11 @@ public class Handler {
                     parseMessage(message);
                 } catch (IOException e) {
                     System.out.println("Connection broken with client: " + user);
-                    server.removeHandler(this);
+                    break;
                 }
             }
+            server.removeHandler(this);
         });
-        handlerThread.start();
     }
 
     private void parseMessage(String message) {
@@ -143,10 +142,6 @@ public class Handler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public Thread getHandlerThread() {
-        return handlerThread;
     }
 
     public String getUser() {

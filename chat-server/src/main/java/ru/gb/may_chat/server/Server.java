@@ -8,6 +8,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static ru.gb.may_chat.constants.MessageConstants.REGEX;
@@ -17,9 +19,11 @@ import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
 
 public class Server {
     private final int port;
-    private List<Handler> handlers;
 
+    private List<Handler> handlers;
     private UserService userService;
+
+    private ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     public Server(UserService userService) {
         this.userService = userService;
@@ -64,6 +68,10 @@ public class Server {
     public UserService getUserService() {
         return userService;
     }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
     
     public synchronized boolean isUserAlreadyOnline(String nick) {
         for (Handler handler : handlers) {
@@ -90,6 +98,7 @@ public class Server {
 
     private void shutdown() {
         userService.stop();
+        executorService.shutdown();
     }
 
     private void sendContacts() {
