@@ -1,5 +1,7 @@
 package ru.gb.may_chat.server.service.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.gb.may_chat.server.dao.UserDao;
 import ru.gb.may_chat.server.error.NickAlreadyIsBusyException;
 import ru.gb.may_chat.server.error.WrongCredentialsException;
@@ -9,6 +11,8 @@ import ru.gb.may_chat.server.service.UserService;
 import java.sql.SQLException;
 
 public class DbUserServiceImpl implements UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(DbUserServiceImpl.class);
 
     private final UserDao userDao;
 
@@ -36,7 +40,7 @@ public class DbUserServiceImpl implements UserService {
 
     @Override
     public String authenticate(String login, String password) {
-        System.out.println("Auth log: " + login + " pass: " + password);
+        log.info("Auth log: {}, pass: {}", login, password);
 
         try {
             return userDao.getNickByLoginAndPassword(login, password)

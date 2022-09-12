@@ -1,5 +1,7 @@
 package ru.gb.may_chat.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.gb.may_chat.props.PropertyReader;
 import ru.gb.may_chat.server.service.UserService;
 
@@ -18,6 +20,9 @@ import static ru.gb.may_chat.enums.Command.LIST_USERS;
 import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
 
 public class Server {
+
+    private static final Logger log = LoggerFactory.getLogger(Server.class);
+
     private final int port;
 
     private List<Handler> handlers;
@@ -33,12 +38,12 @@ public class Server {
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Server start!");
+            log.info("Server start!");
             userService.start();
             while (true) {
-                System.out.println("Waiting for connection......");
+                log.info("Waiting for connection......");
                 Socket socket = serverSocket.accept();
-                System.out.println("Client connected");
+                log.info("Client connected");
                 Handler handler = new Handler(socket, this);
                 handler.handle();
             }
