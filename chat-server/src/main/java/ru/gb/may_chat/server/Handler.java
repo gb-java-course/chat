@@ -1,5 +1,7 @@
 package ru.gb.may_chat.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.gb.may_chat.enums.Command;
 import ru.gb.may_chat.props.PropertyReader;
 import ru.gb.may_chat.server.error.NickAlreadyIsBusyException;
@@ -17,10 +19,12 @@ import static ru.gb.may_chat.enums.Command.CHANGE_NICK_OK;
 import static ru.gb.may_chat.enums.Command.ERROR_MESSAGE;
 
 public class Handler {
+
+    private static final Logger log = LoggerFactory.getLogger(Handler.class);
+
     private Socket socket;
     private DataOutputStream out;
     private DataInputStream in;
-    private Thread handlerThread;
     private Server server;
     private String user;
 
@@ -35,30 +39,32 @@ public class Handler {
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
             this.authTimeout = PropertyReader.getInstance().getAuthTimeout();
-            System.out.println("Handler created");
+            log.info("Handler created");
         } catch (IOException e) {
-            System.err.println("Connection problems with user: " + user);
+            log.error("Connection problems with user: {}", user);
         }
     }
 
     public void handle() {
-        handlerThread = new Thread(() -> {
+        server.getExecutorService().submit(() -> {
             authorize();
-            System.out.println("Auth done");
+            log.info("Auth done");
             while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     String message = in.readUTF();
                     parseMessage(message);
                 } catch (IOException e) {
-                    System.out.println("Connection broken with client: " + user);
-                    server.removeHandler(this);
+                    log.info("Connection broken with client: {}", user);
+                    break;
                 }
             }
+            server.removeHandler(this);
         });
-        handlerThread.start();
     }
 
     private void parseMessage(String message) {
+        log.info("Got message: {}", message);
+
         String[] split = message.split(REGEX);
         Command command = Command.getByCommand(split[0]);
 
@@ -66,7 +72,7 @@ public class Handler {
             case BROADCAST_MESSAGE -> server.broadcast(user, split[1]);
             case PRIVATE_MESSAGE -> server.sendPrivateMessage(user, split[1], split[2]);
             case CHANGE_NICK -> changeNick(split[1]);
-            default -> System.out.println("Unknown message " + message);
+            default -> log.error("Unknown message {}", message);
         }
     }
 
@@ -82,7 +88,7 @@ public class Handler {
     }
 
     private void authorize() {
-        System.out.println("Authorizing");
+        log.info("Authorizing");
 
         new Thread(() -> {
             try {
@@ -101,6 +107,8 @@ public class Handler {
             while (!socket.isClosed()) {
                 String msg = in.readUTF();
                 if (msg.startsWith(AUTH_MESSAGE.getCommand())) {
+                    log.info("Got auth message: {}", msg);
+
                     String[] parsed = msg.split(REGEX);
                     String response = "";
                     String nickname = null;
@@ -111,18 +119,18 @@ public class Handler {
                         nickname = server.getUserService().authenticate(login, password);
                     } catch (WrongCredentialsException e) {
                         response = ERROR_MESSAGE.getCommand() + REGEX + e.getMessage();
-                        System.out.println("Wrong credentials: " + login);
+                        log.info("Wrong credentials: " + login);
                     }
                     
                     if (server.isUserAlreadyOnline(nickname)) {
                         response = ERROR_MESSAGE.getCommand() + REGEX + "This client already connected";
-                        System.out.println("Already connected");
+                        log.info("Already connected");
                     }
                     
                     if (!response.equals("")) {
                         send(response);
                     } else {
-                        System.out.println("Auth ok");
+                        log.info("Auth ok");
                         synchronized (mon) {
                             this.user = nickname;
                         }
@@ -143,10 +151,6 @@ public class Handler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public Thread getHandlerThread() {
-        return handlerThread;
     }
 
     public String getUser() {

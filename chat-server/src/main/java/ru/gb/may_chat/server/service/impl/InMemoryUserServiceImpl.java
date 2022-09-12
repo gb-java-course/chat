@@ -1,5 +1,7 @@
 package ru.gb.may_chat.server.service.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.gb.may_chat.server.error.NickAlreadyIsBusyException;
 import ru.gb.may_chat.server.error.UserNotFoundException;
 import ru.gb.may_chat.server.error.WrongCredentialsException;
@@ -10,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InMemoryUserServiceImpl implements UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(InMemoryUserServiceImpl.class);
 
     private List<User> users;
 
@@ -26,17 +30,17 @@ public class InMemoryUserServiceImpl implements UserService {
                 new User("log4", "pass4", "nick4"),
                 new User("log5", "pass5", "nick5")
         ));
-        System.out.println("User service started");
+        log.info("User service started");
     }
 
     @Override
     public void stop() {
-        System.out.println("User service stopped");
+        log.info("User service stopped");
     }
 
     @Override
     public String authenticate(String login, String password) {
-        System.out.println("Auth log: " + login + " pass: " + password);
+        log.info("Auth log: {}, pass: {}", login, password);
         for (User user : users) {
             if (login.equals(user.getLogin()) && password.equals(user.getPassword())) {
 //            if (Objects.equals(login, user.getLogin()) && Objects.equals(password, user.getPassword())) {

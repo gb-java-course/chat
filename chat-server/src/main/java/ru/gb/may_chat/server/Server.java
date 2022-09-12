@@ -1,5 +1,7 @@
 package ru.gb.may_chat.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.gb.may_chat.props.PropertyReader;
 import ru.gb.may_chat.server.service.UserService;
 
@@ -8,6 +10,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static ru.gb.may_chat.constants.MessageConstants.REGEX;
@@ -16,10 +20,15 @@ import static ru.gb.may_chat.enums.Command.LIST_USERS;
 import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
 
 public class Server {
-    private final int port;
-    private List<Handler> handlers;
 
+    private static final Logger log = LoggerFactory.getLogger(Server.class);
+
+    private final int port;
+
+    private List<Handler> handlers;
     private UserService userService;
+
+    private ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     public Server(UserService userService) {
         this.userService = userService;
@@ -29,12 +38,12 @@ public class Server {
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Server start!");
+            log.info("Server start!");
             userService.start();
             while (true) {
-                System.out.println("Waiting for connection......");
+                log.info("Waiting for connection......");
                 Socket socket = serverSocket.accept();
-                System.out.println("Client connected");
+                log.info("Client connected");
                 Handler handler = new Handler(socket, this);
                 handler.handle();
             }
@@ -64,6 +73,10 @@ public class Server {
     public UserService getUserService() {
         return userService;
     }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
     
     public synchronized boolean isUserAlreadyOnline(String nick) {
         for (Handler handler : handlers) {
@@ -90,6 +103,7 @@ public class Server {
 
     private void shutdown() {
         userService.stop();
+        executorService.shutdown();
     }
 
     private void sendContacts() {
